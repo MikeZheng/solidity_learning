@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-import {AggregatorV3Interface} from "@chainlink/contracts/src/v0.8/interfaces/AggregatorV3Interface.sol";
 
 contract FundMe {
     address public owner;
@@ -12,7 +11,6 @@ contract FundMe {
     uint256 constant MINIMUM_VALUE = 1 * 10**18; //  1USD
     uint256 constant TARGET = 10 * 10**18; //  10 USD
 
-    AggregatorV3Interface internal dataFeed;
 
     mapping(address => uint256) public fundersToAmount;
 
@@ -22,9 +20,6 @@ contract FundMe {
         // 判断众筹金额是否超过最小值
         lockTime = _lockTime;
 
-        dataFeed = AggregatorV3Interface(
-            0x694AA1769357215DE4FAC081bf1f309aDC325306
-        );
         deploymentTimestamp = block.timestamp;
 
         owner = msg.sender;
@@ -54,7 +49,7 @@ contract FundMe {
         */
     function convertETHtoUSD(uint256 ethAmount)
         internal
-        view
+        pure 
         returns (uint256)
     {
         // getChainlinkDataFeedLatestAnswer 返回的是int类型，需要转成uint
@@ -102,16 +97,8 @@ contract FundMe {
     /**
      * Returns the latest answer.
      */
-    function getChainlinkDataFeedLatestAnswer() public view returns (int256) {
-        // prettier-ignore
-        (
-            /* uint80 roundId */,
-            int256 answer,
-            /*uint256 startedAt*/,
-            /*uint256 updatedAt*/,
-            /*uint80 answeredInRound*/
-        ) = dataFeed.latestRoundData();
-        return answer;
+    function getChainlinkDataFeedLatestAnswer() public pure  returns (int256) {        
+        return 100000000000;
     }
 
     function transferOwnership(address newOwner) public onlyOwner {
