@@ -1,7 +1,6 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.27;
 
-
 contract FundMe {
     address public owner;
 
@@ -11,10 +10,11 @@ contract FundMe {
     uint256 constant MINIMUM_VALUE = 1 * 10**18; //  1USD
     uint256 constant TARGET = 10 * 10**18; //  10 USD
 
-
     mapping(address => uint256) public fundersToAmount;
 
-    bool getFundSuccess = false;
+    address erc20Addr;
+
+    bool public getFundSuccess = false;
 
     constructor(uint256 _lockTime) {
         // 判断众筹金额是否超过最小值
@@ -38,7 +38,7 @@ contract FundMe {
     }
 
     function getFundedAmtByInvestor() public view returns (uint256) {
-        return fundersToAmount[msg.sender];
+        return convertETHtoUSD(fundersToAmount[msg.sender]) / (10**18);
     }
 
     /**
@@ -49,7 +49,7 @@ contract FundMe {
         */
     function convertETHtoUSD(uint256 ethAmount)
         internal
-        pure 
+        pure
         returns (uint256)
     {
         // getChainlinkDataFeedLatestAnswer 返回的是int类型，需要转成uint
@@ -86,23 +86,39 @@ contract FundMe {
             "Target is reached."
         );
         require(fundersToAmount[msg.sender] != 0, "there is no fund for you");
-        fundersToAmount[msg.sender] = 0;
         bool success;
         (success, ) = payable(msg.sender).call{
             value: fundersToAmount[msg.sender]
         }("");
         require(success, "transaction tx is failed");
+        fundersToAmount[msg.sender] = 0;
     }
 
     /**
      * Returns the latest answer.
      */
-    function getChainlinkDataFeedLatestAnswer() public pure  returns (int256) {        
+    function getChainlinkDataFeedLatestAnswer() public pure returns (int256) {
         return 100000000000;
     }
 
     function transferOwnership(address newOwner) public onlyOwner {
         owner = newOwner;
+    }
+
+    function getUSDBalance() external view returns (uint256) {
+        return convertETHtoUSD(address(this).balance) / (10**18);
+    }
+
+    function setFunderToAmt(address funder, uint256 amtToUpdate) external {
+        require(
+            msg.sender == erc20Addr,
+            "you do not have permission to call this function"
+        );
+        fundersToAmount[funder] = amtToUpdate;
+    }
+
+    function setErc20Addr(address _erc20Addr) public onlyOwner {
+        erc20Addr = _erc20Addr;
     }
 
     modifier onlyOwner() {
